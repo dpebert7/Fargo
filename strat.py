@@ -202,12 +202,9 @@ for i in parameters:
     X.append(i[0])
     Y.append(i[1])
 
-"""
-TRY TO PLOT ON 3D GRAPH:
-
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+# MAKE 3D Plot
 fig = plt.figure()
-ax = fig.add_subplot(111,  projection = '3d')
-"""
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(X, Y, Z)
+plt.show()
 
