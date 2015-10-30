@@ -1,4 +1,6 @@
-import fargo
+from mpl_toolkits.mplot3d import axes3d
+import matplotlib.pyplot as plt
+import numpy as np
 
 #Create expected value dictionary for rolling 1-10 nDice
 def createExpValDict(nRolls):
@@ -202,9 +204,10 @@ for i in parameters:
     X.append(i[0])
     Y.append(i[1])
 
+
+
 # MAKE 3D Plot
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 ax.scatter(X, Y, Z)
 plt.show()
-
