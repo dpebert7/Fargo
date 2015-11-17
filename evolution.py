@@ -2,16 +2,15 @@ from fargo2 import rollN
 from random import randint
 from random import random
 from operator import add
-import matplotlib.pyplot as plt
+import functools
+#import matplotlib.pyplot as plt
 
 
 
 """
 Applying genetic algorithm
-
 Each member of the population should be a (nonincreasing?)
 8-vector of multiples of 50 from 50 to 3100.
-
 e.g. the number 800 in the 3rd position of the list means that 
 with 3 dice remaining, the function should continue unless the 
 score is ABOVE 800.
@@ -19,7 +18,7 @@ score is ABOVE 800.
 
 def indiv():
     'create a member of the Fargo population.'
-    return [randint(1,62)*50 for x in xrange(8)]
+    return [randint(1,62)*50 for x in range(8)]
 
 
 def pop(count):
@@ -27,7 +26,7 @@ def pop(count):
     Create a number of individuals (i.e. a population).
     count: the number of individuals in the population  
     """
-    return [ indiv() for x in xrange(count) ]
+    return [ indiv() for x in range(count) ]
 
 
 conservativeList = [50 for i in range(8)]
@@ -84,7 +83,7 @@ def fitFun(individual, iterations):
 
 def gradePop(pop, iterations):
     'Find average fitness for a population.'
-    summed = reduce(add, (fitFun(x, iterations) for x in pop), 0)
+    summed = functools.reduce(add, (fitFun(x, iterations) for x in pop), 0)
     return summed / (len(pop) * 1.0)
 
 #gradePop([conservativeList, aggressiveList],10)
@@ -147,9 +146,9 @@ def evolve(pop, iterations, retain=0.25, add_random=0.02, mutate=0.01):
 ## IMPORTANT STARTING PARAMATERS ##
 ###################################
 
-iterations = 10000
-populationSize = 5000
-generations = 50
+iterations = 100
+populationSize = 50
+generations = 5
 
 retain=0.25 
 add_random=0.02 
@@ -164,7 +163,7 @@ fitness_history = [gradePop(p,100),]
 population_history = [p]
 
 #Run evolution
-for i in xrange(generations):
+for i in range(generations):
     p = evolve(p,iterations, retain, add_random, mutate)
     population_history.append(p)
     
@@ -172,10 +171,11 @@ for i in xrange(generations):
     print (new_population_grade)
     fitness_history.append(new_population_grade)
 
-
+"""
 # Plot progress
 plt.plot(range(generations+1),fitness_history)
 plt.show()
+"""
 
 # Population from the last iteration
 fittestPop = population_history[-1]

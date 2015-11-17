@@ -12,7 +12,7 @@ def roll(n):
     """
     return a vector containgng the result of rolling n dice.
     """
-    return [randint(1,6) for x in xrange(n)]
+    return [randint(1,6) for x in range(n)]
 
 # Summarize the roll results in a dictionary
 # with keys 1-6 and values the roll count
@@ -198,5 +198,3 @@ def machineTurn(strategyFunction, oldScore = 0):
         cont = strategyFunction(dice, score)
 
     return (oldScore + score)
-
-
