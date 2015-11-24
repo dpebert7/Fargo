@@ -1,0 +1,66 @@
+fig1:
+             fitFunction: findEV
+          populationSize: 1000
+             generations: 50
+                  retain: 0.25
+              add_random: 0.01
+                  mutate: 0.01
+          populationSize: 1000	
+                   elite: 0.1
+              idealIndiv: [600, 450, 600, 1200, 1250, 1150, 1050, 250]
+   fitness of idealIndiv: 961.9638198959152
+            finalFitness: 953.9046118751412
+	  highestFitness: 958.0371577479098
+
+
+
+
+fig2:
+             fitFunction: findEV
+          populationSize: 1000
+             generations: 50
+                  retain: 0.25
+              add_random: 0.01
+                  mutate: 0.01
+                   elite: 0
+              idealIndiv: [600, 400, 550, 1150, 1250, 1150, 1050, 250]
+   fitness of idealIndiv: 962.317307770591
+            finalFitness: 957.2752496043746
+	  highestFitness: 957.5239405218513
+
+
+
+
+fig3:
+             fitFunction: findEV
+          populationSize: 100
+             generations: 50
+                  retain: 0.25
+              add_random: 0.01
+                  mutate: 0.01
+                   elite: 0
+              idealIndiv: [550, 550, 500, 1400, 1150, 1100, 800, 250]
+   fitness of idealIndiv: 954.6491073176799
+            finalFitness: 952.4908519853848
+	  highestFitness: 952.4908519853848
+
+
+
+
+fig4:
+             fitFunction: findEV
+          populationSize: 100
+             generations: 50
+                  retain: 0.25
+              add_random: 0.01
+                  mutate: 0.01
+                   elite: 0.1
+              idealIndiv: [600, 600, 500, 1150, 1150, 1050, 750, 250]
+   fitness of idealIndiv: 947.8108282526199
+            finalFitness: 950.5562501603423
+	  highestFitness: 954.8117254446712
+
+
+
+
+
