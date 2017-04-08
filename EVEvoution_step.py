@@ -1,10 +1,11 @@
 """
-This script applies a genetic algorithm to Fargo using the expected 
-value function.
+This is a modification of the EVEvolution.py script that includes step 
+optimization for each vector in the population
 """
+
 #import os
 #os.getcwd()
-#os.chdir("Documents/GitRepos/Fargo")
+#os.chdir("/home/david/Desktop/Documents/GitRepos/Fargo")
 
 from EV import findEV
 from operator import add
@@ -15,13 +16,13 @@ import functools
 import matplotlib.pyplot as plt # for plots
 import pylab
 
-import json # for data 
+import json # for data
 
 
 def myround(x, base = 50):
     """
-    round a nunmber to the nearest 50. This function is used in the
-    evolve function to round children to the nearest 50.
+    round a nunmber to the nearest 50. This function is (sometimes) used 
+    in the evolve function to round children to the nearest 50.
     """
     return int(base*round(float(x)/base))
 
@@ -32,21 +33,21 @@ def indiv():
     should have a reasonabble max and min threshold
     """
     vector = []
-    vector.append(randint(9,61)*50) #from 450 to 3050
-    vector.append(randint(8,45)*50) #from 400 to 2250
-    vector.append(randint(7,43)*50) #from 350 to 2150
-    vector.append(randint(6,41)*50) #from 300 to 2050
-    vector.append(randint(5,25)*50) #from 250 to 1250
-    vector.append(randint(4,23)*50) #from 200 to 1150
-    vector.append(randint(3,21)*50) #from 150 to 1050
-    vector.append(randint(2,5)*50)  #from 100 to 250
+    vector.append(randint(9, 61)*50) #from 450 to 3050
+    vector.append(randint(8, 45)*50) #from 400 to 2250
+    vector.append(randint(7, 43)*50) #from 350 to 2150
+    vector.append(randint(6, 41)*50) #from 300 to 2050
+    vector.append(randint(5, 25)*50) #from 250 to 1250
+    vector.append(randint(4, 23)*50) #from 200 to 1150
+    vector.append(randint(3, 21)*50) #from 150 to 1050
+    vector.append(randint(2, 5)*50)  #from 100 to 250
     return vector
 
 
 def pop(count):
     """
     Create a number of strategy vectors (i.e. a population).
-    count: the number of strategies in the population  
+    count: the number of strategies in the population
     """
     return [ indiv() for x in range(count) ]
 
@@ -57,14 +58,14 @@ aggressiveList = [5000 for i in range(8)]
         
 def fitFun(individual):
     """
-    Use the expected value function from nDiceResult.py to find the 
+    Use the expected value function from nDiceResult.py to find the
     "fitness" (i.e. EV) of a strategy vector.
     This replaces the iterative fitness function from iterateEvolution.py.
     """
     return findEV(ndice = 10, gene = individual)
 
-# fitFun(conservativeList,10)
-# fitFun(aggressiveList,10)
+# fitFun(conservativeList, 10)
+# fitFun(aggressiveList, 10)
 
 
 
@@ -98,6 +99,8 @@ def evolve(pop, retain=0.25, add_random=0.01, mutate=0.02, elite = 0):
     elite: fraction of population from the top that will
     automatically move on to next generation without mutation
     """
+    # Linearly Optimize
+    pop = [stepOptimize(x)["thebest"] for x in pop]
 
     # Sort strongest to weakest
     graded = [ (fitFun(x), x) for x in pop ]
@@ -127,7 +130,6 @@ def evolve(pop, retain=0.25, add_random=0.01, mutate=0.02, elite = 0):
 
     
     # crossover parents to create children using splicing
-
     parents_length = len(parents)
     desired_length = len(pop) - parents_length
     children = []
@@ -290,7 +292,8 @@ def evolutionRevolution(ntrials,
     return
 
 #evolutionRevolution(100)
-# this is 100 trials of 25 generations of 1000 strategies. If one generation takes about 70 seconds to run then this should compile in about 2 days.
+# this is 100 trials of 25 generations of 1000 strategies. 
+# If one generation takes about 70 seconds to run then this should compile in about 2 days.
 
 """
 #read values back into Python and store as one big .json file 
@@ -377,27 +380,61 @@ plt.legend(loc = 1)
 """
 
 thebest = [550, 400, 550, 1150, 1250, 1150, 1050, 250, 1, 1]
-decent = [550, 200, 600, 1150, 1250, 1150, 1050, 250, 1, 1]
+decent = [550, 400, 600, 1100, 1250, 1150, 1050, 250, 1, 1]
 worstest = [1000, 400, 200, 700, 400, 1150, 1050, 150, 1, 1]
 
+
+#%%
 def stepOptimize(strategy_vector):
-    startingEV = findEV(strategy_vector)
-    a = startingEV
-    copy = [i for i in strategy_vector]
-    for i in range(8):
-        copy[i]+=50 #increment up by 50
-        if findEV(copy)>a:
-            a = findEV(copy)
-            best = [i for i in copy]
-        copy[i]-=100 #increment down by 50
-        if findEV(copy)>a:
-            a = findEV(copy)
-            best = [i for i in copy]
-        copy[i]+=50
-    if a > startingEV: #continue optimizing
-        return stepOptimize(best)
-    else: #No more optimization. End.
-        return {"strategy_vector":strategy_vector, "newEV":startingEV}
+    """
+    This function takes a strategy vector and repeatedly searches for local optima
+    by repeatedly incrementing each entry up and down by 50.
+    """
+    #Initialize lists of EV and stretegy vectors    
+    EVlist = [findEV(strategy_vector)]
+    strategyVectorList = [strategy_vector]
+    keepGoing = True
+    count = 1
+    
+    while keepGoing == True:
+        #Set up copy
+        copy = [i for i in strategyVectorList[-1]]
+        newStrategy = [i for i in strategyVectorList[-1]]
+        newEV = findEV(copy)
+        
+        #Increment the values of copy up and down by 50
+        for index in range(8):
+            copy[index]+=50
+            if findEV(copy)>newEV:
+                newStrategy = [i for i in copy]
+                newEV = findEV(newStrategy)
+            copy[index]-=100
+            if findEV(copy)>newEV:
+                newStrategy = [i for i in copy]
+                newEV = findEV(newStrategy)
+            copy[index]+=50
+            
+        # Record new values OR end while loop
+        if(newEV > EVlist[-1]):
+            EVlist.append(findEV(newStrategy))        
+            strategyVectorList.append(newStrategy)
+            keepGoing = True
+        else:
+            keepGoing = False
+        
+        if(count<100):
+            count+=1
+        else:
+            print("This is the end of the line")
+            keepGoing = False
+
+    return {"strategyVectorList":strategyVectorList, 
+            "EVlist":EVlist,
+            "thebest":strategyVectorList[-1],
+            "maxEV":EVlist[-1]}
+
+#%%
+
 
 endingStrongest = [trialdata[i]["strongest_history"][-1] for i in range(100)]
 endingEVs = [trialdata[i]["strongest_fitness_history"][-1] for i in range(100)]
@@ -410,15 +447,27 @@ sum([i==962.3343332342337 for i in endingEVs])
 
 
 def aggressiveness(strategy_vector):
+    """
+    This function returns a vector where each entry gives the fraction 
+    of plausible strategies that are less aggressive at that entry.
+    """
     vector = []
-    vector.append(float((strategy_vector[0]-450)/float(50*52))) #from 450 to 3050, 52 possibilities
-    vector.append(float((strategy_vector[1]-400)/float(50*37))) #from 400 to 2250, 37 possibilities
-    vector.append(float((strategy_vector[2]-350)/float(50*36))) #from 350 to 2150, 36 possibilities
-    vector.append(float((strategy_vector[3]-300)/float(50*35))) #from 300 to 2050, 35 possibilities
-    vector.append(float((strategy_vector[4]-250)/float(50*20))) #from 250 to 1250, 20 possibilities
-    vector.append(float((strategy_vector[5]-200)/float(50*19))) #from 200 to 1150, 19 possibilities
-    vector.append(float((strategy_vector[6]-150)/float(50*18))) #from 150 to 1050, 18 possibilities
-    vector.append(float((strategy_vector[7]-100)/float(50*3)))  #from 100 to 250, 4 possibilities
+    vector.append(float((strategy_vector[0]-450)/float(50*52))) 
+        #450 to 3050, 52 vals
+    vector.append(float((strategy_vector[1]-400)/float(50*37))) 
+        #400 to 2250, 37 vals
+    vector.append(float((strategy_vector[2]-350)/float(50*36))) 
+        #350 to 2150, 36 vals
+    vector.append(float((strategy_vector[3]-300)/float(50*35))) 
+        #300 to 2050, 35 vals
+    vector.append(float((strategy_vector[4]-250)/float(50*20))) 
+        #250 to 1250, 20 vals
+    vector.append(float((strategy_vector[5]-200)/float(50*19))) 
+        #200 to 1150, 19 vals
+    vector.append(float((strategy_vector[6]-150)/float(50*18))) 
+        #150 to 1050, 18 vals
+    vector.append(float((strategy_vector[7]-100)/float(50*3)))  
+        #100 to 250, 4 vals
     return vector
 
 """
@@ -451,12 +500,14 @@ plt.tight_layout()
 plt.show()
 """
 
-def compare(strat1, strat2):
+def distance(strat1, strat2):
+    """
+    This functions finds the "distance" (i.e. how many 50's) separate two strategy vectors.
+    For example, the strategies [100, 0, 50] and [0, 50, 50] have a distance of 3.
+    """
     return int(sum([abs(strat1[i]-strat2[i]) for i in range(8)])/50)
 
-mean([compare(thebest, endingStrongest[i]) for i in range(100)])
-hist([compare(thebest, endingStrongest[i]) for i in range(100)])
-
-# nail down length and format
-# practice 5 times
+# Comparing the optimal strategy to the strongest strategy from each trial
+#mean([compare(thebest, endingStrongest[i]) for i in range(100)])
+#hist([compare(thebest, endingStrongest[i]) for i in range(100)])
 

@@ -1,4 +1,13 @@
-probDicts = [{(50, 0): 0.16666666666666666, (100, 0): 0.16666666666666666},
+"""
+This list of dictionaries contains all possible outcomes for rolling N 
+dice for 1 <= N <= 10, with the exception of N = 9, which is unnecessary 
+in fargo. For each dictionary, the key is (points_scored:dice_remaining) 
+the value is the probability of that outcome.
+"""
+
+listOfProbDicts = [
+ {(50, 0): 0.16666666666666666, 
+  (100, 0): 0.16666666666666666},
  {(50, 1): 0.2222222222222222,
   (100, 0): 0.027777777777777776,
   (100, 1): 0.2222222222222222,
@@ -338,7 +347,7 @@ probDicts = [{(50, 0): 0.16666666666666666, (100, 0): 0.16666666666666666},
   (2100, 1): 1.9051973784484073e-05,
   (2150, 0): 4.762993446121018e-06,
   (2200, 0): 5.953741807651273e-07},
- "Hope I don't end up rolling 9",
+ "Hope I don't end up rolling 9 dice :P",
  {(100, 8): 0.001875428669410151,
   (150, 8): 0.003750857338820302,
   (200, 7): 0.015691086534064928,

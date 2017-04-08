@@ -84,7 +84,7 @@ def turn(oldScore=0):
         if r[0]==0:             #No score imporvement => lose and turn over.
             score = oldScore
             dice = 0
-            print("You lose! Your score is", score, end = "\n")
+            print("You lose! Your score is", score)
             return              #End the function if lose
 
         if r[1]==0:             #No dice left => win.

@@ -1,12 +1,7 @@
-"""
-This script enumerates all possible outcomes for 1-8,10 dice. 
-Following this, the functions compileResultsDict and makeProbDict
-create the listOfProbDicts necessary for the expected value function.
-"""
-
-
-import math # Necessary for factorial funcution
-
+from fargo2 import summarize
+from fargo2 import result
+from fargo2 import rollN
+from math import factorial
 
 
 roll1 = [[x+1] for x in range(6)]
@@ -118,7 +113,7 @@ roll8 = [[z,y-1,x-2, w-3, v-4, u-5, t-6, s-7]
 #117 scoring results
 
 ####################
-#  SKIP ROLL 9 :P  #
+## SKIP ROLL 9 :D ##
 ####################
 
 roll9 = "HOPE I NEVER END UP HERE!"
@@ -150,47 +145,6 @@ roll10 = [[z,y-1,x-2, w-3, v-4, u-5, t-6, s-7, r-8, q-9]
 #194 scoring results
 
 
-def summarize(rollList):
-    """
-    Return a dictionary containing a summary of rolling n dice. This is used 
-    in compileResultDict
-    """
-    return {x:rollList.count(x) for x in range(1,7)}
-
-
-def result(sumDict):
-    """
-    Given a dictionary from summarize, return the resulting score
-    and remaining dice. This is used in compileResultDict
-    """
-    s = 0
-
-    #Remove triple 1's
-    while sumDict[1]>=3:
-        sumDict[1] = sumDict[1]-3
-        s +=1000
-
-    #Remove other triples
-    for i in sumDict:
-        while sumDict[i]>=3:
-            sumDict[i] = sumDict[i]-3
-            s += 100*i
-
-    #Count 1's as 100
-    ones = sumDict[1]
-    sumDict[1] = sumDict[1]-ones
-    s += 100*ones
-    
-    #Count 5's as 50
-    fives = sumDict[5]
-    sumDict[5] = sumDict[5]-fives
-    s += 50*fives
-
-    #Count Extra Dice
-    diceLeft = sum(sumDict.values())
-    
-    return{'score':s, 'dice':diceLeft}
-
 
 def compileResultDict(roll_n_list):
     """
@@ -204,9 +158,9 @@ def compileResultDict(roll_n_list):
     resultDict = {}
     for roll in roll_n_list:
         summary = summarize(roll)
-        repeats = math.factorial(sum(summary.values()))
+        repeats = factorial(sum(summary.values()))
         for i in summary.values():
-            repeats = int(repeats/math.factorial(i))
+            repeats = int(repeats/factorial(i))
         res = result(summary)
         if res["score"] ==0:
             # if there is no score, then don't
@@ -234,17 +188,10 @@ def resultToProbDict(resultDict):
 
 
 def makeProbDict(roll_n_list):
-    """
-    This combines compileResultDict and resultToProbDict in one function.
-    """
     return resultToProbDict(compileResultDict(roll_n_list))
 
 
 
-"""
-The following listOfProbDicts is stored in probDicts.py for more convenient
-access without recompiling this entire script every time.
-"""
 listOfProbDicts = [makeProbDict(roll1),
                    makeProbDict(roll2),
                    makeProbDict(roll3),
@@ -259,103 +206,149 @@ listOfProbDicts = [makeProbDict(roll1),
 
 
 
+# Use "global" to access variable outside of function!
+
+
+conStrat = [1,1,1,1]
+aggStrat = [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000]
 
 
 
 
-###############################################
-###############################################
-###############################################
+sVec = [0,0]
+
+#%%
+def findEV(ndice = 10, gene = [1, 1, 1, 1, 1, 1, 1, 1]):
+    """
+    This function initializes the process for finding the expected value
+    of a gene, given a starting value of 10 dice. This function relies on
+    the functions manager and roll, as well as listOfProbDicts, a list
+    containing the possible outcomes and probability (as a dictionary)
+    of rolling 1-10 dice.
+    """
+
+    manager(ndice, gene)
+    
+    #print("done with tree.")
+    #print(sVec)
+    valueOfGame = sVec[0]/(1-sVec[1])
+    #print(valueOfGame)
+    return valueOfGame
+
+#%%    
+def manager(ndice, gene, prob = 1, soft = 0):
+    """
+    This function is called by findEV and roll. It decides whether or not
+    to continue rolling. If yes, then it calls roll to determine the outcome
+    of each possible roll. If no, then it updates the golbal variable sVec.
+    """
+    tempGene = gene
+    while len(tempGene) < ndice:
+        tempGene.append(1)
+    #print(soft)
+    #print(tempGene)
+
+    if ((ndice != 10) & (soft >= tempGene[ndice-1])):    # End run because gene says so
+        global sVec
+        sVec = [sVec[0]+soft*prob, sVec[1]]  # Add soft score to score vec
+        #print("end run")
+        #print(sVec)
+        
+    else:
+        for key in listOfProbDicts[ndice-1]:  # Keep rolling because gene says so
+            roll(ndice = ndice,
+                 gene = gene,
+                 key = key,
+                 prob = prob,
+                 soft = soft)               # Investigate ALL possible outcomes!
+
+#%%
+def roll(ndice, gene, key, prob = 1, soft = 0):
+    """
+    This function determines the outcome of each roll, updating probability,
+    ndice, and soft as appropriate. The function also deals with losing and
+    winning scenarios.
+    """
+    #print(key)
+    newprob = prob*listOfProbDicts[ndice-1][key]
+                            # Update probability based on total likelihood of
+                            # ending up in this part of the tree
+    newsoft = soft + key[0] # Update soft
+    newdice = key[1]        # Update number of dice remaining
+
+    if newdice == 0:        # Win <= no dice remain
+        global sVec
+        sVec = [sVec[0]+(newprob*newsoft), sVec[1]+newprob]
+        #print("win!")
+        #print(sVec)
+    else:                   # Neither win nor lose; go to manager to
+                            # Either roll again or tabulate score
+        manager(ndice = ndice,
+                gene = gene,
+                prob = newprob,
+                soft = newsoft)
+#%%
+
 
 """
-I think that what follows below is an obsolete version of EV.py necessary 
-before I understood global variables, but I'm not 100% sure. I've commented 
-it out for now.
+RESULTS FROM THE  10-DICE GAME:
 
+Aggressive strategy: [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000]
+ - Likelihood of winning: 0.26657920946402586
+ - Expected Value: 437.98989858503955
+ - Computes in 9 min
+
+Conservative strategy: [1, 1, 1, 1, 1, 1, 1, 1]
+ - Likelihood of winning: 0.010480967078189303
+ - Expected Value: 838.1760104620182
+ - Computes in ~5 seconds
+
+modest stategy: [1, 1, 1, 1, 1000, 1000, 1000, 1000]
+ - Likelihood of winning: 0.017375023046330276
+ - Expected Value: 935.719971161939
+ - Computes in ~1 minute
 """
-#
-#
-#
-## Use "global" to access variable outside of function!
-#
-#
-#conStrat = [1,1,1,1]
-#aggStrat = [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000]
-#
-#
-#
-#
-#sVec = [0,0]
-#
-#
-#def findEV(ndice, gene):
-#    """
-#    This function initializes the process for finding the expected value
-#    of a gene, given a starting value of 10 dice. This function relies on
-#    the functions manager and roll, as well as listOfProbDicts, a list
-#    containing the possible outcomes and probability (as a dictionary)
-#    of rolling 1-10 dice.
-#    """
-#    sVec = [0,0]
-#    global sVec
-#    
-#    manager(ndice, gene)
-#    
-#    print("done with tree.")
-#    print(sVec)
-#    valueOfGame = sVec[0]/(1-sVec[1])
-#    print(valueOfGame)
-#    return valueOfGame
-#    
-#
-#def manager(ndice, gene, prob = 1, soft = 0):
-#    """
-#    This function is called by findEV and roll. It decides whether or not
-#    to continue rolling. If yes, then it calls roll to determine the outcome
-#    of each possible roll. If no, then it updates the golbal variable sVec.
-#    """
-#    while len(gene)<ndice:      # If gene is too short, then at least roll once.
-#        gene.append(1)
-#    print(gene)
-#    if soft >= gene[ndice-1]:   # Stop rolling because gene says so
-#        global sVec
-#        sVec = [sVec[0]+soft*prob, sVec[1]]  # Add soft score to score vec
-#        print("end run")
-#        print(sVec)
-#        
-#    else:
-#        for key in listOfProbDicts[ndice-1]:  # Keep rolling because gene says so
-#            roll(ndice = ndice,
-#                 gene = gene,
-#                 key = key,
-#                 prob = prob,
-#                 soft = soft)               # Investigate ALL possible outcomes!
-#
-#
-#def roll(ndice, gene, key, prob = 1, soft = 0):
-#    """
-#    This function determines the outcome of each roll, updating probability,
-#    ndice, and soft as appropriate. The function also deals with losing and
-#    winning scenarios.
-#    """
-#    print(key)
-#    global sVec
-#    newprob = prob*listOfProbDicts[ndice-1][key]
-#                            # Update probability based on total likelihood of
-#                            # ending up in this part of the tree
-#    newsoft = soft + key[0] # Update soft
-#    newdice = key[1]        # Update number of dice remaining
-#    
-#    if key[0] == 0:        #Lose
-#        print("lose")
-#
-#    elif newdice == 0:      # Win <= no dice remain
-#        sVec = [sVec[0]+(newprob*newsoft), sVec[1]+newprob]
-#        print("win!")
-#        print(sVec)
-#    else:                   # Neither win nor lose; go to manager to
-#                            # Either roll again or tabulate score
-#        manager(ndice = newdice,
-#                gene = gene,
-#                prob = newprob,
-#                soft = newsoft)
+
+
+
+
+def listTurn(stratList = [1,1,1,1,1,1,1,1], ndice = 10):
+    turnScore = 0
+    global turnScore
+
+    listTurnManager(stratList, ndice)
+
+    return turnScore
+
+
+
+def listTurnManager(stratList, ndice):
+    """
+    simulate a turn in Fargo using a strategy list.
+    This function will be used as the main part of the fitness function.
+    """
+    global turnScore
+    dice = ndice
+    runScore = 0
+    cont = 1
+
+    while cont != 0:
+        r = rollN(dice)
+
+        if r['score'] == 0:      #No score imporvement => lose and turn over.
+            cont = 0
+            runScore = 0     #End the function if lose
+
+        elif r['dice'] == 0:           #No dice left => win.
+            #Call the function again if win.
+            cont = 0
+            runScore += r['score']
+            turnScore += runScore
+            listTurnManager(stratList, ndice) 
+            
+        else:
+            dice = r['dice']
+            runScore += r['score']
+            if runScore >= stratList[dice-1]:
+                turnScore += runScore
+                cont = 0
